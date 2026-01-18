@@ -77,3 +77,9 @@ https://github.com/Shubham-coder-a/RapidAid-Smart-Emergency-Response-App
 Shubham Raju Nagpure
 B.Sc. IT Student
 Android | Kotlin | Jetpack Compose
+
+## 👥 Team Members
+- Shubham Nagpure – Android Development
+- Mayur – Database & Testing
+- Rohit – Logic & Backend
+- Trushna – UI/UX & Presentation
