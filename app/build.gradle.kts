@@ -52,4 +52,6 @@ dependencies {
     // 📍 Location
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation(libs.androidx.ui)
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 }

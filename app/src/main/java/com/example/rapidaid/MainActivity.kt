@@ -1,13 +1,17 @@
 package com.example.rapidaid
 
 import android.Manifest
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -36,7 +40,11 @@ import com.google.firebase.database.FirebaseDatabase
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 
 
 // 🔥 Firebase helper functions
@@ -69,8 +77,35 @@ fun sendSosToFirebase(mobile: String) {
 }
 
 class MainActivity : ComponentActivity() {
+
+    private val locationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            val granted =
+                permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+
+            if (!granted) {
+                Toast.makeText(
+                    this,
+                    "Location permission required",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 🔐 Ask location permission
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+
+        // 🎨 UI
         setContent {
             RapidAidTheme {
                 AppContent()
@@ -78,6 +113,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+
+
 
 @Composable
 fun AppContent() {
@@ -238,6 +276,7 @@ fun HomeScreen(onSosClick: () -> Unit) {
 
     val context = LocalContext.current
 
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -335,22 +374,87 @@ fun HomeScreen(onSosClick: () -> Unit) {
 fun AlertSentScreen(onBack: () -> Unit) {
 
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // 🔴 MAIN ALERT CARD
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                Text(
+                    text = "AI Emergency Alert",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD32F2F)
+                )
+
+                Spacer(modifier = Modifier.height(23.dp))
+
+                // 🖼 ALERT IMAGE
+                Image(
+                    painter = painterResource(id = R.drawable.ai_alert),
+                    contentDescription = "Emergency Alert",
+                    modifier = Modifier
+                        .height(220.dp)
+                        .fillMaxWidth(),
+                    contentScale = ContentScale.Fit
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Divider(color = Color.LightGray)
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+//                Text(
+//                    text = "Powered by Google AI • Nano Banana",
+//                    fontSize = 12.sp,
+//                    color = Color.Gray
+//                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        // 🚨 SUCCESS TEXT
         Text(
             text = "🚨 Alert Sent Successfully",
-            fontSize = 22.sp,
+            fontSize = 23.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Red
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(44.dp))
 
-        Button(onClick = onBack) {
-            Text("Back to Home", color = Color.White)
+        // 🔙 BACK BUTTON
+        Button(
+            onClick = onBack,
+            shape = RoundedCornerShape(50),
+            modifier = Modifier
+                .height(54.dp)
+                .width(220.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF6A4FB3)
+            )
+        ) {
+            Text(
+                text = "Back to Home",
+                fontSize = 16.sp,
+                color = Color.White
+            )
         }
     }
 }
@@ -432,6 +536,52 @@ fun StaticSOSCircle(onClick: () -> Unit) {
         }
     }
 }
+
+fun sendSosWithLocation(context: Context, mobile: String) {
+
+    val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+
+    if (
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED
+    ) {
+        return
+    }
+
+    fusedClient.getCurrentLocation(
+        Priority.PRIORITY_HIGH_ACCURACY,
+        null
+    ).addOnSuccessListener { location ->
+
+        if (location != null) {
+
+            val lat = location.latitude
+            val lon = location.longitude
+
+            val mapsLink = "https://maps.google.com/?q=$lat,$lon"
+
+            val sosData = mapOf(
+                "userMobile" to mobile,
+                "message" to "SOS button pressed",
+                "status" to "ACTIVE",
+                "timestamp" to System.currentTimeMillis(),
+                "location" to mapOf(
+                    "latitude" to lat,
+                    "longitude" to lon,
+                    "mapsLink" to mapsLink
+                )
+            )
+
+            FirebaseDatabase.getInstance()
+                .getReference("sosAlerts")
+                .push()
+                .setValue(sosData)
+        }
+    }
+}
+
 @Composable
 fun BottomFooter(
     selected: String,
