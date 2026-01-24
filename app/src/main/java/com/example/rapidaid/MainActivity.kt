@@ -560,7 +560,7 @@ fun sendSosWithLocation(context: Context, mobile: String) {
             val lat = location.latitude
             val lon = location.longitude
 
-            val mapsLink = "https://maps.google.com/?q=$lat,$lon"
+            val mapsLink = "https://maps.google.com/?q=$lat ,$lon"
 
             val sosData = mapOf(
                 "userMobile" to mobile,
