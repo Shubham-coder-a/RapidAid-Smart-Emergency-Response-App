@@ -38,6 +38,8 @@ android {
 
 dependencies {
 
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
     // 🔥 Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.09.00"))
 

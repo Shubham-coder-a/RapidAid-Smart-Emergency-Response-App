@@ -1,26 +1,25 @@
 package com.example.rapidaid
 
 import android.Manifest
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,22 +31,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.rapidaid.ui.theme.RapidAidTheme
-import com.google.firebase.database.FirebaseDatabase
-//import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.firebase.database.FirebaseDatabase
 
 
-// 🔥 Firebase helper functions
 fun saveUserToFirebase(name: String, mobile: String, emergency: String) {
     val userData = mapOf(
         "name" to name,
@@ -62,491 +52,16 @@ fun saveUserToFirebase(name: String, mobile: String, emergency: String) {
         .setValue(userData)
 }
 
-fun sendSosToFirebase(mobile: String) {
-    val sosData = mapOf(
-        "userMobile" to mobile,
-        "message" to "SOS button pressed",
-        "timestamp" to System.currentTimeMillis(),
-        "status" to "ACTIVE"
-    )
-
-    FirebaseDatabase.getInstance()
-        .getReference("sosAlerts")
-        .push()
-        .setValue(sosData)
-}
-
-class MainActivity : ComponentActivity() {
-
-    private val locationPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            val granted =
-                permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
-
-            if (!granted) {
-                Toast.makeText(
-                    this,
-                    "Location permission required",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // 🔐 Ask location permission
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-
-        // 🎨 UI
-        setContent {
-            RapidAidTheme {
-                AppContent()
-            }
-        }
-    }
-}
-
-
-
-
-@Composable
-fun AppContent() {
-
-    var screen by remember { mutableStateOf("login") }
-    var userMobile by remember { mutableStateOf("") }
-
-    when (screen) {
-
-        "login" -> LoginScreen {
-            screen = "create"
-        }
-
-        "create" -> CreateAccountScreen { mobile ->
-            userMobile = mobile
-            screen = "home"
-        }
-
-        "home" -> HomeScreen(
-            onSosClick = {
-                sendSosToFirebase(userMobile)
-                screen = "alert"
-            }
-        )
-
-        "alert" -> AlertSentScreen {
-            screen = "home"
-        }
-    }
-}
-
-@Composable
-fun LoginScreen(onNext: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Login / Sign Up", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(onClick = onNext) {
-            Text("Continue",
-            color=Color.White
-
-            )
-        }
-    }
-}
-
-@Composable
-fun CreateAccountScreen(onContinue: (String) -> Unit) {
-
-    var name by remember { mutableStateOf("") }
-    var mobile by remember { mutableStateOf("") }
-    var emergency by remember { mutableStateOf("") }
-    val isFormValid =
-        name.isNotBlank() &&
-                mobile.length == 10 &&
-                emergency.length == 10
-
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-
-        Text("Create Account", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Full Name") },
-            textStyle = TextStyle(
-                color = Color.Black
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = Color.Gray,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                cursorColor = MaterialTheme.colorScheme.primary
-            )
-        )
-
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        OutlinedTextField(
-            value = mobile,
-            onValueChange = { mobile = it },
-            label = { Text("Mobile Number") },
-            textStyle = TextStyle(
-                color = Color.Black
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        OutlinedTextField(
-            value = emergency,
-            onValueChange = { emergency = it },
-            label = { Text("Emergency Contact Number") },
-            textStyle = TextStyle(
-                color = Color.Black
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        if (name.isBlank()) {
-            Text("Please enter full name", color = Color.Red, fontSize = 12.sp)
-        }
-
-        if (mobile.isNotEmpty() && mobile.length != 10) {
-            Text("Mobile number must be 10 digits", color = Color.Red, fontSize = 12.sp)
-        }
-
-        if (emergency.isNotEmpty() && emergency.length != 10) {
-            Text("Emergency contact must be 10 digits", color = Color.Red, fontSize = 12.sp)
-        }
-
-
-        Button(
-            onClick = {
-                saveUserToFirebase(name, mobile, emergency)
-                onContinue(mobile)
-
-            },
-            enabled = isFormValid,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
-            )
-        ) {
-            Text("Register / Continue")
-        }
-
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Text(
-            text = "Your safety is our priority",
-            fontSize = 12.sp,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-fun HomeScreen(onSosClick: () -> Unit) {
-
-    val context = LocalContext.current
-
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp)
-    ) {
-
-        // 🔹 HEADER
-        Text(
-            text = "RapidAid",
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            text = "Press button to call emergency",
-            fontSize = 22.sp,
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(100.dp))
-
-        // 🔴 SOS BUTTON
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            StaticSOSCircle {
-                onSosClick()
-            }
-        }
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        // 📞 CALL + 💬 SMS
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-
-            Card(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clickable {
-                        context.startActivity(Intent(Intent.ACTION_DIAL))
-                    },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(Icons.Filled.Call, contentDescription = "Call", tint = Color.Red)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Call", textAlign = TextAlign.Center)
-                }
-            }
-
-            Card(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clickable {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("sms:"))
-                        )
-                    },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(Icons.Filled.Email, contentDescription = "SMS", tint = Color.Red)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("SMS", textAlign = TextAlign.Center)
-                }
-            }
-        }
-
-        // 🚀 PUSH FOOTER TO BOTTOM
-        Spacer(modifier = Modifier.weight(1f))
-
-        // 🔻 FOOTER (ALWAYS LAST)
-        BottomFooter(
-            selected = "home",
-            onSelect = {
-                // future navigation
-            }
-        )
-    }
-}
-
-@Composable
-fun AlertSentScreen(onBack: () -> Unit) {
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        // 🔴 MAIN ALERT CARD
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
-            elevation = CardDefaults.cardElevation(8.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                Text(
-                    text = "AI Emergency Alert",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFD32F2F)
-                )
-
-                Spacer(modifier = Modifier.height(23.dp))
-
-                // 🖼 ALERT IMAGE
-                Image(
-                    painter = painterResource(id = R.drawable.ai_alert),
-                    contentDescription = "Emergency Alert",
-                    modifier = Modifier
-                        .height(220.dp)
-                        .fillMaxWidth(),
-                    contentScale = ContentScale.Fit
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Divider(color = Color.LightGray)
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-//                Text(
-//                    text = "Powered by Google AI • Nano Banana",
-//                    fontSize = 12.sp,
-//                    color = Color.Gray
-//                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(30.dp))
-
-        // 🚨 SUCCESS TEXT
-        Text(
-            text = "🚨 Alert Sent Successfully",
-            fontSize = 23.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Red
-        )
-
-        Spacer(modifier = Modifier.height(44.dp))
-
-        // 🔙 BACK BUTTON
-        Button(
-            onClick = onBack,
-            shape = RoundedCornerShape(50),
-            modifier = Modifier
-                .height(54.dp)
-                .width(220.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF6A4FB3)
-            )
-        ) {
-            Text(
-                text = "Back to Home",
-                fontSize = 16.sp,
-                color = Color.White
-            )
-        }
-    }
-}
-
-@Composable
-fun EmergencyCard(
-    title: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .size(120.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFEFE7FF) // 💜 light purple card
-        ),
-
-        elevation = CardDefaults.cardElevation(6.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = Color(0xFF6A1B9A),
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF6A1B9A)
-            )
-        }
-    }
-}
-
-
-
-@Composable
-fun StaticSOSCircle(onClick: () -> Unit) {
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier.size(260.dp)
-    ) {
-
-        Box(
-            modifier = Modifier
-                .size(260.dp)
-                .background(Color(0xFFFFE5E5), CircleShape)
-        )
-
-        Box(
-            modifier = Modifier
-                .size(220.dp)
-                .background(Color(0xFFFFCFCF), CircleShape)
-        )
-
-        Box(
-            modifier = Modifier
-                .size(160.dp)
-                .background(Color(0xFFD32F2F), CircleShape)
-                .clickable { onClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "SOS",
-                color = Color.White,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
 fun sendSosWithLocation(context: Context, mobile: String) {
 
     val fusedClient = LocationServices.getFusedLocationProviderClient(context)
 
-    if (
-        ContextCompat.checkSelfPermission(
+    if (ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
         ) != PackageManager.PERMISSION_GRANTED
     ) {
+        Toast.makeText(context, "Location permission denied", Toast.LENGTH_SHORT).show()
         return
     }
 
@@ -559,8 +74,7 @@ fun sendSosWithLocation(context: Context, mobile: String) {
 
             val lat = location.latitude
             val lon = location.longitude
-
-            val mapsLink = "https://maps.google.com/?q=$lat ,$lon"
+            val mapsLink = "https://maps.google.com/?q=$lat,$lon"
 
             val sosData = mapOf(
                 "userMobile" to mobile,
@@ -582,38 +96,349 @@ fun sendSosWithLocation(context: Context, mobile: String) {
     }
 }
 
+
+class MainActivity : ComponentActivity() {
+
+    private val locationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] != true) {
+                Toast.makeText(this, "Location permission required", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+
+        setContent {
+            RapidAidTheme {
+                AppContent()
+            }
+        }
+    }
+}
+
+
+@Composable
+fun AppContent() {
+
+    val context = LocalContext.current
+
+    var screen by remember { mutableStateOf("login") }
+    var selectedTab by remember { mutableStateOf("home") }
+    var userMobile by remember { mutableStateOf("") }
+
+    when (screen) {
+
+        "login" -> LoginScreen {
+            screen = "create"
+        }
+
+        "create" -> CreateAccountScreen { mobile ->
+            userMobile = mobile
+            selectedTab = "home"
+            screen = "home"
+        }
+
+        "home" -> HomeScreen(
+            selectedTab = selectedTab,
+            onTabSelect = {
+                selectedTab = it
+                screen = it
+            },
+            onSosClick = {
+                sendSosWithLocation(context, userMobile)
+                screen = "alert"
+            }
+        )
+
+        "features" -> FeaturesScreen {
+            selectedTab = "home"
+            screen = "home"
+        }
+
+        "profile" -> ProfileScreen(userMobile) {
+            selectedTab = "home"
+            screen = "home"
+        }
+
+        "alert" -> AlertSentScreen {
+            screen = "home"
+        }
+    }
+}
+
+@Composable
+fun FeaturesScreen(content: @Composable () -> Unit) {
+    TODO("Not yet implemented")
+}
+
+@Composable
+fun LoginScreen(onNext: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Login / Sign Up", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(onClick = onNext) {
+            Text("Continue", color = Color.White)
+        }
+    }
+}
+
+@Composable
+fun CreateAccountScreen(onContinue: (String) -> Unit) {
+
+    var name by remember { mutableStateOf("") }
+    var mobile by remember { mutableStateOf("") }
+    var emergency by remember { mutableStateOf("") }
+
+    val isFormValid =
+        name.isNotBlank() &&
+                mobile.length == 10 &&
+                emergency.length == 10
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+
+        Text(
+            text = "Create Account",
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 🔹 Full Name
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Full Name") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF7B1FA2),
+                unfocusedBorderColor = Color.LightGray,
+                focusedLabelColor = Color(0xFF7B1FA2),
+                cursorColor = Color(0xFF7B1FA2)
+            )
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 🔹 Mobile Number
+        OutlinedTextField(
+            value = mobile,
+            onValueChange = { if (it.length <= 10) mobile = it },
+            label = { Text("Mobile Number") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF7B1FA2),
+                unfocusedBorderColor = Color.LightGray,
+                focusedLabelColor = Color(0xFF7B1FA2),
+                cursorColor = Color(0xFF7B1FA2)
+            )
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 🔹 Emergency Contact
+        OutlinedTextField(
+            value = emergency,
+            onValueChange = { if (it.length <= 10) emergency = it },
+            label = { Text("Emergency Contact Number") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF7B1FA2),
+                unfocusedBorderColor = Color.LightGray,
+                focusedLabelColor = Color(0xFF7B1FA2),
+                cursorColor = Color(0xFF7B1FA2)
+            )
+        )
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        // 🔥 Gradient Button (Aliya style)
+        Button(
+            onClick = {
+                saveUserToFirebase(name, mobile, emergency)
+                onContinue(mobile)
+            },
+            enabled = isFormValid,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = RoundedCornerShape(30.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF7B1FA2),
+                disabledContainerColor = Color(0xFFCE93D8)
+            )
+        ) {
+            Text(
+                text = "Register / Continue",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+
+            )
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Text(
+            text = "Your safety is our priority",
+            fontSize = 12.sp,
+            color = Color.Gray,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
+}
+
+
+@Composable
+fun HomeScreen(
+    selectedTab: String,
+    onTabSelect: (String) -> Unit,
+    onSosClick: () -> Unit
+)
+ {
+
+
+    val context = LocalContext.current
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(20.dp)
+    ) {
+
+        Text("RapidAid", fontSize = 40.sp, fontWeight = FontWeight.Bold)
+        Text("Press button to call emergency", fontSize = 20.sp, color = Color.Gray)
+
+        Spacer(modifier = Modifier.height(80.dp))
+
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            StaticSOSCircle { onSosClick() }
+        }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+
+            EmergencyCard("Call", Icons.Default.Call) {
+                context.startActivity(Intent(Intent.ACTION_DIAL))
+            }
+
+            EmergencyCard("SMS", Icons.Default.Email) {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:")))
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+        BottomFooter("home") {}
+    }
+}
+
+@Composable
+fun AlertSentScreen(onBack: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("🚨 Alert Sent Successfully", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Red)
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(onClick = onBack) {
+            Text("Back to Home")
+        }
+    }
+}
+
+@Composable
+fun StaticSOSCircle(onClick: () -> Unit) {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(240.dp)) {
+        Box(Modifier.size(240.dp).background(Color(0xFFFFE5E5), CircleShape))
+        Box(
+            Modifier.size(160.dp)
+                .background(Color.Red, CircleShape)
+                .clickable { onClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Text("SOS", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun EmergencyCard(title: String, icon: ImageVector, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.size(120.dp).clickable { onClick() },
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, contentDescription = title, tint = Color.Red)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(title)
+        }
+    }
+}
+
 @Composable
 fun BottomFooter(
     selected: String,
     onSelect: (String) -> Unit
 ) {
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp),
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(10.dp)
+            .height(60.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+
+        FooterItem(
+            title = "Home",
+            icon = Icons.Default.Home,
+            selected = selected == "home"
         ) {
+            onSelect("home")
+        }
 
-            FooterItem("Home", Icons.Default.Home, selected == "home") {
-                onSelect("home")
-            }
+        FooterItem(
+            title = "Features",
+            icon = Icons.Default.Star,
+            selected = selected == "features"
+        ) {
+            onSelect("features")
+        }
 
-            FooterItem("Features", Icons.Default.Star, selected == "features") {
-                onSelect("features")
-            }
-
-            FooterItem("Your Info", Icons.Default.Person, selected == "profile") {
-                onSelect("profile")
-            }
+        FooterItem(
+            title = "Profile",
+            icon = Icons.Default.Person,
+            selected = selected == "profile"
+        ) {
+            onSelect("profile")
         }
     }
 }
@@ -632,12 +457,43 @@ fun FooterItem(
         Icon(
             imageVector = icon,
             contentDescription = title,
-            tint = if (selected) Color(0xFF6A1B9A) else Color.Gray
+            tint = if (selected) Color.Red else Color.Gray
         )
         Text(
             text = title,
             fontSize = 12.sp,
-            color = if (selected) Color(0xFF6A1B9A) else Color.Gray
+            color = if (selected) Color.Red else Color.Gray
         )
     }
 }
+
+@Composable
+fun ProfileScreen(mobile: String, onBack: () -> Unit) {
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        Text("Profile", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text("Registered Mobile:")
+        Text(
+            text = mobile,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Button(onClick = onBack) {
+            Text("Back to Home")
+        }
+    }
+}
+
+
