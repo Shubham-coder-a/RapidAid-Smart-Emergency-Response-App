@@ -14,6 +14,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Email
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -227,12 +229,15 @@ fun CreateAccountScreen(onContinue: (String) -> Unit) {
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Full Name") },
+            label = { Text("Full Name",color=Color.Black) },
+
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF7B1FA2),
-                unfocusedBorderColor = Color.LightGray,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+//                focusedBorderColor = Color(0xFF7B1FA2),
+//                unfocusedBorderColor = Color.LightGray,
                 focusedLabelColor = Color(0xFF7B1FA2),
                 cursorColor = Color(0xFF7B1FA2)
             )
@@ -243,34 +248,52 @@ fun CreateAccountScreen(onContinue: (String) -> Unit) {
         // 🔹 Mobile Number
         OutlinedTextField(
             value = mobile,
-            onValueChange = { if (it.length <= 10) mobile = it },
-            label = { Text("Mobile Number") },
+            onValueChange = {
+                // 🔒 Sirf digits allow + max 10
+                if (it.all { ch -> ch.isDigit() } && it.length <= 10) {
+                    mobile = it
+                }
+            },
+            label = { Text(text = "Mobile Number", color=Color.Black) },
             modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number // 🔥 number keyboard
+            ),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF7B1FA2),
-                unfocusedBorderColor = Color.LightGray,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
                 focusedLabelColor = Color(0xFF7B1FA2),
                 cursorColor = Color(0xFF7B1FA2)
             )
         )
+
 
         Spacer(modifier = Modifier.height(14.dp))
 
         // 🔹 Emergency Contact
         OutlinedTextField(
             value = emergency,
-            onValueChange = { if (it.length <= 10) emergency = it },
-            label = { Text("Emergency Contact Number") },
+            onValueChange = {
+                // 🔒 Sirf digits allow + max 10
+                if (it.all { ch -> ch.isDigit() } && it.length <= 10) {
+                    emergency = it
+                }
+            },
+            label = { Text(text = "Emergency Contact Number", color=Color.Black) },
             modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number // 🔥 number keyboard
+            ),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF7B1FA2),
-                unfocusedBorderColor = Color.LightGray,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
                 focusedLabelColor = Color(0xFF7B1FA2),
                 cursorColor = Color(0xFF7B1FA2)
             )
         )
+
 
         Spacer(modifier = Modifier.height(30.dp))
 
