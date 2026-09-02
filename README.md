@@ -88,9 +88,6 @@ RapidAid solves this problem by offering:
 ### Alert Sent Screen
 ![Alert Screen](screenshots/6alert.jpeg)
 
-### Emergency Call Trigger
-![Call Screen](screenshots/7contact.jpeg)
-
 ### Emergency SMS Trigger
 ![SMS Screen](screenshots/9message.jpeg)
 
